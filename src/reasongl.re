@@ -81,10 +81,20 @@ external openFile :
 
 [@bs.send] external sendRequest : (httpRequestT, Js.null('a)) => unit = "send";
 
+[@bs.val] [@bs.scoped "LocalStorage"] external localStorageSetItem : string => string => unit = "setItem";
+[@bs.val] [@bs.scoped "LocalStorage"] external localStorageGetItem : string => Js.nullable(string) = "setItem";
+
+[@bs.val] [@bs.scoped "JSON"] external serializeAny : 'a => string = "stringify";
+[@bs.val] [@bs.scoped "JSON"] external deserializeAny : string => 'a = "parse";
+
 module Gl: RGLInterface.t = {
   let target = "web";
   type contextT;
-  module type FileT = {type t; let readFile: (~filename: string, ~cb: string => unit) => unit;};
+  module type FileT = {type t;
+    let readFile: (~filename: string, ~cb: string => unit) => unit;
+    let saveUserData: (~key: string, ~value: 'a) => bool;
+    let loadUserData: (~key: string) => option('a);
+  };
   module File = {
     type t;
     let readFile = (~filename, ~cb) => {
@@ -100,6 +110,26 @@ module Gl: RGLInterface.t = {
       );
       sendRequest(rawFile, Js.null)
     };
+    let saveUserData = (~key, ~value) => {
+      try {
+        let string = serializeAny(value);
+        localStorageSetItem(key, string);
+        true;
+      } {
+        | _ => false
+      }
+    };
+    let loadUserData = (~key) => {
+      try {
+        let string = localStorageGetItem(key);
+        switch (Js.Nullable.to_opt(string)) {
+        | None => None
+        | Some(string) => Some(deserializeAny(string))
+        }
+      } {
+        | _ => None
+      }
+    };
   };
   module type WindowT = {
     type t;
@@ -108,7 +138,7 @@ module Gl: RGLInterface.t = {
     let getPixelWidth: t => int;
     let getPixelHeight: t => int;
     let getPixelScale: t => float;
-    let init: (~argv: array(string)) => t;
+    let init: (~argv: array(string), (t) => unit) => unit;
     let setWindowSize: (~window: t, ~width: int, ~height: int) => unit;
     let getContext: t => contextT;
   };
@@ -123,11 +153,11 @@ module Gl: RGLInterface.t = {
     let getPixelHeight = (window: t) =>
       int_of_float @@ (float_of_int @@ getHeight(window)) *. Document.devicePixelRatio;
     let getPixelScale = (_: t) => Document.devicePixelRatio;
-    let init = (~argv as _) => {
+    let init = (~argv as _, cb) => {
       let canvas: t = createCanvas();
       setBackgroundColor(getStyle(canvas), "black");
       addToBody(canvas);
-      canvas
+      cb(canvas)
     };
     let setWindowSize = (~window: t, ~width, ~height) => {
       setWidth(window, int_of_float @@ float_of_int(width) *. Document.devicePixelRatio);
