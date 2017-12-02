@@ -17,6 +17,10 @@ module Document = {
   [@bs.send] external addEventListener : ('window, string, 'eventT => unit) => unit =
     "addEventListener";
   [@bs.val] external devicePixelRatio : float = "window.devicePixelRatio";
+  type document;
+  [@bs.val] external document : document = "";
+  [@bs.set] external setTitle : (document, string) => unit = "title";
+  let setTitle = setTitle(document);
 };
 
 [@bs.set] external setHiddenRAFID : ('a, int) => unit = "__hiddenrafid";
@@ -139,7 +143,7 @@ module Gl: RGLInterface.t = {
     let getPixelWidth: t => int;
     let getPixelHeight: t => int;
     let getPixelScale: t => float;
-    let init: (~argv: array(string), (t) => unit) => unit;
+    let init: (~title: string=?, ~argv: array(string), (t) => unit) => unit;
     let setWindowSize: (~window: t, ~width: int, ~height: int) => unit;
     let getContext: t => contextT;
   };
@@ -154,8 +158,12 @@ module Gl: RGLInterface.t = {
     let getPixelHeight = (window: t) =>
       int_of_float @@ (float_of_int @@ getHeight(window)) *. Document.devicePixelRatio;
     let getPixelScale = (_: t) => Document.devicePixelRatio;
-    let init = (~argv as _, cb) => {
+    let init = (~title=?, ~argv as _, cb) => {
       let canvas: t = createCanvas();
+      switch (title) {
+      | None => ()
+      | Some(title) => Document.setTitle(title)
+      };
       setBackgroundColor(getStyle(canvas), "black");
       addToBody(canvas);
       cb(canvas)
