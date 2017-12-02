@@ -86,6 +86,7 @@ external openFile :
 
 [@bs.val] [@bs.scoped "JSON"] external serializeAny : 'a => string = "stringify";
 [@bs.val] [@bs.scoped "JSON"] external deserializeAny : string => 'a = "parse";
+[@bs.val] external performanceNow : unit => float = "performance.now";
 
 module Gl: RGLInterface.t = {
   let target = "web";
@@ -171,6 +172,7 @@ module Gl: RGLInterface.t = {
   module Events = Events;
   type mouseButtonEventT =
     (~button: Events.buttonStateT, ~state: Events.stateT, ~x: int, ~y: int) => unit;
+  let getTimeMs = performanceNow;
 
   /*** See Gl.re for explanation. **/
   let render =
