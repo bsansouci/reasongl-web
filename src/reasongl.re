@@ -96,13 +96,13 @@ module Gl: RGLInterface.t = {
   let target = "web";
   type contextT;
   module type FileT = {type t;
-    let readFile: (~filename: string, ~cb: string => unit) => unit;
-    let saveUserData: (~key: string, ~value: 'a) => bool;
-    let loadUserData: (~key: string) => option('a);
+    let readFile: (~context: contextT, ~filename: string, ~cb: string => unit) => unit;
+    let saveUserData: (~context: contextT, ~key: string, ~value: 'a) => bool;
+    let loadUserData: (~context: contextT, ~key: string) => option('a);
   };
   module File = {
     type t;
-    let readFile = (~filename, ~cb) => {
+    let readFile = (~context, ~filename, ~cb) => {
       let rawFile = makeXMLHttpRequest();
       openFile(rawFile, ~kind="GET", ~filename, ~whatIsThis=Js.false_);
       onreadystatechange(
@@ -115,7 +115,7 @@ module Gl: RGLInterface.t = {
       );
       sendRequest(rawFile, Js.null)
     };
-    let saveUserData = (~key, ~value) => {
+    let saveUserData = (~context, ~key, ~value) => {
       try {
         let string = serializeAny(value);
         localStorageSetItem(key, string);
@@ -124,7 +124,7 @@ module Gl: RGLInterface.t = {
         | _ => false
       }
     };
-    let loadUserData = (~key) => {
+    let loadUserData = (~context, ~key) => {
       try {
         let string = localStorageGetItem(key);
         switch (Js.Nullable.to_opt(string)) {
@@ -192,6 +192,7 @@ module Gl: RGLInterface.t = {
         ~keyDown: option(((~keycode: Events.keycodeT, ~repeat: bool) => unit))=?,
         ~keyUp: option(((~keycode: Events.keycodeT) => unit))=?,
         ~windowResize: option((unit => unit))=?,
+        ~backPressed=?,
         ~displayFunc: float => unit,
         ()
       ) => {
@@ -523,7 +524,7 @@ module Gl: RGLInterface.t = {
 
   /*** TODO: We don't care about forcing load option for web images (we do allow it for native as SOIL supports
        it). We should probably not do this... */
-  let loadImage = (~filename, ~loadOption=?, ~callback, ()) =>
+  let loadImage = (~context, ~filename, ~loadOption=?, ~callback, ()) =>
     switch loadOption {
     | _ =>
       let image = makeImage();
@@ -581,6 +582,22 @@ module Gl: RGLInterface.t = {
       ~format=RGLConstants.rgba,
       ~type_=RGLConstants.unsigned_byte,
       ~data
+    );
+
+    let fillTextureWithColor = (~context: contextT, ~target: int, ~level: int,
+    ~red: int,
+    ~green: int,
+    ~blue: int,
+    ~alpha: int
+  ) =>
+    texImage2D_RGBA(
+      ~context,
+      ~target,
+      ~level,
+      ~width=1,
+      ~height=1,
+      ~border=0,
+      ~data=Bigarray.of_array(Bigarray.Uint8, [|red, green, blue, alpha|])
     );
   [@bs.send]
   external vertexAttribDivisor :
