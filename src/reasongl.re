@@ -11,6 +11,8 @@ module Document = {
   [@bs.send] external getContext : (element, string) => 'context = "getContext";
   [@bs.get] external getWidth : element => int = "width";
   [@bs.get] external getHeight : element => int = "height";
+  [@bs.get] external getInnerWidth : window => float = "innerWidth";
+  [@bs.get] external getInnerHeight : window => float = "innerHeight";
   [@bs.val] external requestAnimationFrame : (unit => unit) => int =
     "window.requestAnimationFrame";
   [@bs.val] external now : unit => float = "Date.now";
@@ -140,6 +142,8 @@ module Gl: RGLInterface.t = {
     type t;
     let getWidth: t => int;
     let getHeight: t => int;
+    let getMaxWidth: t => int;
+    let getMaxHeight: t => int;
     let getPixelWidth: t => int;
     let getPixelHeight: t => int;
     let getPixelScale: t => float;
@@ -153,6 +157,10 @@ module Gl: RGLInterface.t = {
       int_of_float @@ float_of_int(getWidth(window)) /. Document.devicePixelRatio;
     let getHeight = (window) =>
       int_of_float @@ float_of_int(getHeight(window)) /. Document.devicePixelRatio;
+    let getMaxWidth = (window) =>
+      int_of_float @@ Document.getInnerWidth(Document.window);
+    let getMaxHeight = (window) =>
+      int_of_float @@ Document.getInnerHeight(Document.window);
     let getPixelWidth = (window: t) =>
       int_of_float @@ (float_of_int @@ getWidth(window)) *. Document.devicePixelRatio;
     let getPixelHeight = (window: t) =>
