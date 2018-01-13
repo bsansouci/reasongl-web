@@ -1,12 +1,12 @@
 {
-  "name": "ReasonglWeb",
-  "version": "0.2.0",
+  "name": "@jaredly/reasongl-web",
+  "version": "1.0.2",
   "description": "Reason bindings to WebGL",
   "dependencies": {
-    "ReasonglInterface": "file:../reasongl-interface",
+    "@jaredly/reasongl-interface": "1.0.1",
     "gl-matrix": "*"
   },
-  "author": "bsansouci & schmavery",
+  "author": "bsansouci & schmavery & jaredly",
   "devDependencies": {
     "bs-platform": "*"
   }

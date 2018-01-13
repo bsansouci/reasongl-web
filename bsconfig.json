@@ -1,12 +1,12 @@
 {
-  "name": "ReasonglWeb",
+  "name": "@jaredly/reasongl-web",
   "sources": [{
     "dir": "src"
   }, {
     "dir": "example",
     "type": "dev"
   }],
-  "bs-dependencies": ["ReasonglInterface"],
+  "bs-dependencies": ["@jaredly/reasongl-interface"],
   "allowed-build-kinds": ["js"],
   "refmt": 3,
 }
