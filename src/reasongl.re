@@ -36,6 +36,9 @@ type canvasT;
 [@bs.get] external getClientX : 'eventT => int = "clientX";
 [@bs.get] external getClientXF : 'eventT => float = "clientX";
 
+[@bs.get] external buttons : 'eventT => int = "buttons";
+let mouseIsPressed = evt => buttons(evt) != 0;
+
 [@bs.send] external preventDefault : 'eventT => unit = "";
 
 [@bs.get] external getClientY : 'eventT => int = "clientY";
@@ -142,6 +145,8 @@ let makeAudioContext : unit => audioContextT = [%bs.raw {| function() { return n
 [@bs.val] [@bs.scoped "JSON"] external deserializeAny : string => 'a = "parse";
 [@bs.val] external performanceNow : unit => float = "performance.now";
 
+let checkTouchScreen: unit => bool = () => [%bs.raw {|'ontouchstart' in document.documentElement|}];
+
 module Gl: RGLInterface.t = {
   let target = "web";
   type contextT;
@@ -150,6 +155,7 @@ module Gl: RGLInterface.t = {
     let saveUserData: (~context: contextT, ~key: string, ~value: 'a) => bool;
     let loadUserData: (~context: contextT, ~key: string) => option('a);
   };
+  let isTouchScreen = checkTouchScreen();
   module File = {
     type t;
     let readFile = (~context, ~filename, ~cb) => {
@@ -309,22 +315,20 @@ module Gl: RGLInterface.t = {
           cb(~button, ~state, ~x, ~y)
         }
       );
-      if (touchStart == None) {
-        Document.addEventListener(
-          canvas,
-          "touchstart",
-          (e) => {
-            preventDefault(e);
-            let button = Events.LeftButton;
-            let state = Events.MouseDown;
-            let rect = getBoundingClientRect(canvas);
-            let touch = touches(e)[0];
-            let x = getClientX(touch) - getLeft(rect);
-            let y = getClientY(touch) - getTop(rect);
-            cb(~button, ~state, ~x, ~y)
-          }
-        )
-      };
+      Document.addEventListener(
+        canvas,
+        "touchstart",
+        (e) => {
+          preventDefault(e);
+          let button = Events.LeftButton;
+          let state = Events.MouseDown;
+          let rect = getBoundingClientRect(canvas);
+          let touch = touches(e)[0];
+          let x = getClientX(touch) - getLeft(rect);
+          let y = getClientY(touch) - getTop(rect);
+          cb(~button, ~state, ~x, ~y)
+        }
+      )
     };
     let getTouches = e => {
       let rect = getBoundingClientRect(canvas);
@@ -341,6 +345,16 @@ module Gl: RGLInterface.t = {
     | Some(cb) => {
       Document.addEventListener(
         canvas,
+        "mousedown",
+        (e) => {
+          let rect = getBoundingClientRect(canvas);
+          let x = getClientXF(e) -. float_of_int(getLeft(rect));
+          let y = getClientYF(e) -. float_of_int(getTop(rect));
+          cb(~touches=[(0., x, y)])
+        }
+      );
+      Document.addEventListener(
+        canvas,
         "touchstart",
         (e) => {
           preventDefault(e);
@@ -354,6 +368,18 @@ module Gl: RGLInterface.t = {
     | Some(cb) => {
       Document.addEventListener(
         canvas,
+        "mousemove",
+        (e) => {
+          if (mouseIsPressed(e)) {
+            let rect = getBoundingClientRect(canvas);
+            let x = getClientXF(e) -. float_of_int(getLeft(rect));
+            let y = getClientYF(e) -. float_of_int(getTop(rect));
+            cb(~touches=[(0., x, y)])
+          }
+        }
+      );
+      Document.addEventListener(
+        canvas,
         "touchmove",
         (e) => {
           preventDefault(e);
@@ -365,6 +391,16 @@ module Gl: RGLInterface.t = {
     switch touchEnd {
     | None => ()
     | Some(cb) => {
+      Document.addEventListener(
+        canvas,
+        "mouseup",
+        (e) => {
+          let rect = getBoundingClientRect(canvas);
+          let x = getClientXF(e) -. float_of_int(getLeft(rect));
+          let y = getClientYF(e) -. float_of_int(getTop(rect));
+          cb(~touches=[(0., x, y)])
+        }
+      );
       Document.addEventListener(
         canvas,
         "touchend",
@@ -396,22 +432,20 @@ module Gl: RGLInterface.t = {
           cb(~button, ~state, ~x, ~y)
         }
       );
-      if (touchEnd == None) {
-        Document.addEventListener(
-          canvas,
-          "touchend",
-          (e) => {
-            preventDefault(e);
-            let button = Events.LeftButton;
-            let state = Events.MouseUp;
-            let touch = touches(e)[0];
-            let rect = getBoundingClientRect(canvas);
-            let x = getClientX(touch) - getLeft(rect);
-            let y = getClientY(touch) - getTop(rect);
-            cb(~button, ~state, ~x, ~y)
-          }
-        )
-      }
+      Document.addEventListener(
+        canvas,
+        "touchend",
+        (e) => {
+          preventDefault(e);
+          let button = Events.LeftButton;
+          let state = Events.MouseUp;
+          let touch = touches(e)[0];
+          let rect = getBoundingClientRect(canvas);
+          let x = getClientX(touch) - getLeft(rect);
+          let y = getClientY(touch) - getTop(rect);
+          cb(~button, ~state, ~x, ~y)
+        }
+      )
     };
     switch mouseMove {
     | None => ()
@@ -426,20 +460,18 @@ module Gl: RGLInterface.t = {
           cb(~x, ~y)
         }
       );
-      if (touchMove == None) {
-        Document.addEventListener(
-          canvas,
-          "touchmove",
-          (e) => {
-            preventDefault(e);
-            let rect = getBoundingClientRect(canvas);
-            let touch = touches(e)[0];
-            let x = getClientX(touch) - getLeft(rect);
-            let y = getClientY(touch) - getTop(rect);
-            cb(~x, ~y)
-          }
-        )
-      }
+      Document.addEventListener(
+        canvas,
+        "touchmove",
+        (e) => {
+          preventDefault(e);
+          let rect = getBoundingClientRect(canvas);
+          let touch = touches(e)[0];
+          let x = getClientX(touch) - getLeft(rect);
+          let y = getClientY(touch) - getTop(rect);
+          cb(~x, ~y)
+        }
+      )
     };
 
     let keyLastPressed = ref([]);
