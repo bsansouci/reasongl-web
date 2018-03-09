@@ -1,9 +1,9 @@
 {
   "name": "@jaredly/reasongl-web",
-  "version": "1.0.2",
+  "version": "1.0.2-touch",
   "description": "Reason bindings to WebGL",
   "dependencies": {
-    "@jaredly/reasongl-interface": "1.0.1",
+    "@jaredly/reasongl-interface": "1.0.1-touch",
     "gl-matrix": "*"
   },
   "author": "bsansouci & schmavery & jaredly",

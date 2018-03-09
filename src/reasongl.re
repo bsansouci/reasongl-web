@@ -31,9 +31,18 @@ type canvasT;
 
 [@bs.get] external getButton : 'eventT => int = "button";
 
+[@bs.get] external touches: 'eventT => array('touchT) = "changedTouches";
+
 [@bs.get] external getClientX : 'eventT => int = "clientX";
+[@bs.get] external getClientXF : 'eventT => float = "clientX";
+
+[@bs.send] external preventDefault : 'eventT => unit = "";
 
 [@bs.get] external getClientY : 'eventT => int = "clientY";
+[@bs.get] external getClientYF : 'eventT => float = "clientY";
+
+[@bs.get] external getTouchId : 'eventT => float = "identifier";
+
 
 [@bs.get] external getWhich : 'eventT => int = "which";
 
@@ -259,6 +268,7 @@ module Gl: RGLInterface.t = {
   module Events = Events;
   type mouseButtonEventT =
     (~button: Events.buttonStateT, ~state: Events.stateT, ~x: int, ~y: int) => unit;
+  type touchEventT = (~touches: list((float, float, float))) => unit;
   let getTimeMs = performanceNow;
 
   /*** See Gl.re for explanation. **/
@@ -268,6 +278,9 @@ module Gl: RGLInterface.t = {
         ~mouseDown: option(mouseButtonEventT)=?,
         ~mouseUp: option(mouseButtonEventT)=?,
         ~mouseMove: option(((~x: int, ~y: int) => unit))=?,
+        ~touchStart: option(touchEventT)=?,
+        ~touchMove: option(touchEventT)=?,
+        ~touchEnd: option(touchEventT)=?,
         ~keyDown: option(((~keycode: Events.keycodeT, ~repeat: bool) => unit))=?,
         ~keyUp: option(((~keycode: Events.keycodeT) => unit))=?,
         ~windowResize: option((unit => unit))=?,
@@ -295,7 +308,72 @@ module Gl: RGLInterface.t = {
           let y = getClientY(e) - getTop(rect);
           cb(~button, ~state, ~x, ~y)
         }
+      );
+      if (touchStart == None) {
+        Document.addEventListener(
+          canvas,
+          "touchstart",
+          (e) => {
+            preventDefault(e);
+            let button = Events.LeftButton;
+            let state = Events.MouseDown;
+            let rect = getBoundingClientRect(canvas);
+            let touch = touches(e)[0];
+            let x = getClientX(touch) - getLeft(rect);
+            let y = getClientY(touch) - getTop(rect);
+            cb(~button, ~state, ~x, ~y)
+          }
+        )
+      };
+    };
+    let getTouches = e => {
+      let rect = getBoundingClientRect(canvas);
+      let left = getLeft(rect) |> float_of_int;
+      let top = getTop(rect) |> float_of_int;
+      touches(e) |> Array.map(touch => (
+        getTouchId(touch),
+        getClientXF(touch) -. left,
+        getClientYF(touch) -. top
+      )) |> Array.to_list;
+    };
+    switch touchStart {
+    | None => ()
+    | Some(cb) => {
+      Document.addEventListener(
+        canvas,
+        "touchstart",
+        (e) => {
+          preventDefault(e);
+          cb(~touches=getTouches(e))
+        }
       )
+    }
+    };
+    switch touchMove {
+    | None => ()
+    | Some(cb) => {
+      Document.addEventListener(
+        canvas,
+        "touchmove",
+        (e) => {
+          preventDefault(e);
+          cb(~touches=getTouches(e))
+        }
+      )
+    }
+    };
+    switch touchEnd {
+    | None => ()
+    | Some(cb) => {
+      Document.addEventListener(
+        canvas,
+        "touchend",
+        (e) => {
+          preventDefault(e);
+          cb(~touches=getTouches(e))
+        }
+      )
+    }
     };
     switch mouseUp {
     | None => ()
@@ -317,7 +395,23 @@ module Gl: RGLInterface.t = {
           let y = getClientY(e) - getTop(rect);
           cb(~button, ~state, ~x, ~y)
         }
-      )
+      );
+      if (touchEnd == None) {
+        Document.addEventListener(
+          canvas,
+          "touchend",
+          (e) => {
+            preventDefault(e);
+            let button = Events.LeftButton;
+            let state = Events.MouseUp;
+            let touch = touches(e)[0];
+            let rect = getBoundingClientRect(canvas);
+            let x = getClientX(touch) - getLeft(rect);
+            let y = getClientY(touch) - getTop(rect);
+            cb(~button, ~state, ~x, ~y)
+          }
+        )
+      }
     };
     switch mouseMove {
     | None => ()
@@ -331,8 +425,23 @@ module Gl: RGLInterface.t = {
           let y = getClientY(e) - getTop(rect);
           cb(~x, ~y)
         }
-      )
+      );
+      if (touchMove == None) {
+        Document.addEventListener(
+          canvas,
+          "touchmove",
+          (e) => {
+            preventDefault(e);
+            let rect = getBoundingClientRect(canvas);
+            let touch = touches(e)[0];
+            let x = getClientX(touch) - getLeft(rect);
+            let y = getClientY(touch) - getTop(rect);
+            cb(~x, ~y)
+          }
+        )
+      }
     };
+
     let keyLastPressed = ref([]);
     switch keyDown {
     | None => ()
