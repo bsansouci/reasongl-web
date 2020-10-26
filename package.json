@@ -1,13 +1,12 @@
 {
-  "name": "ReasonglWeb",
+  "name": "@bsansouci/reasongl-web",
   "version": "0.2.0",
   "description": "Reason bindings to WebGL",
   "dependencies": {
-    "ReasonglInterface": "bsansouci/reasongl-interface",
     "gl-matrix": "*"
   },
   "author": "bsansouci & schmavery",
   "devDependencies": {
-    "bs-platform": "*"
+    "bs-platform": "^8.3.1"
   }
 }

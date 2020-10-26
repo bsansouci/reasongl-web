@@ -1,12 +1,14 @@
 {
-  "name": "ReasonglWeb",
-  "sources": [{
-    "dir": "src"
-  }, {
-    "dir": "example",
-    "type": "dev"
-  }],
-  "bs-dependencies": ["ReasonglInterface"],
-  "allowed-build-kinds": ["js"],
+  "name": "@bsansouci/reasongl-web",
+  "sources": [
+    {
+      "dir": "src"
+    },
+    {
+      "dir": "example",
+      "type": "dev"
+    }
+  ],
   "refmt": 3,
+  "namespace": "Reasongl"
 }
