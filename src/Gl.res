@@ -98,7 +98,7 @@ module Audio: AudioT = {
     setAudioSourceLoop(src, loop)
   }
 }
-module Events = Events
+
 type mouseButtonEventT = (
   ~button: Events.buttonStateT,
   ~state: Events.stateT,
