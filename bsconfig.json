@@ -2,7 +2,7 @@
   "name": "@bsansouci/reasongl-web",
   "sources": [
     {
-      "dir": "src"
+      "dir": "src",
     },
     {
       "dir": "example",

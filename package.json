@@ -2,6 +2,9 @@
   "name": "@bsansouci/reasongl-web",
   "version": "0.2.0",
   "description": "Reason bindings to WebGL",
+  "scripts": {
+    "start": "bsb -w"
+  },
   "dependencies": {
     "gl-matrix": "*"
   },
