@@ -1,6 +1,6 @@
 {
   "name": "@bsansouci/reasongl-web",
-  "version": "0.2.3",
+  "version": "1.0.0",
   "description": "Reason bindings to WebGL",
   "scripts": {
     "start": "bsb -w"
