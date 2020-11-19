@@ -9,6 +9,5 @@
       "type": "dev"
     }
   ],
-  "refmt": 3,
-  "namespace": "Reasongl"
+  "refmt": 3
 }
