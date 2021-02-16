@@ -220,4 +220,5 @@ let render = _ => {
 }
 
 /* * Start the render loop. * */
-Gl.render(~window, ~displayFunc=render, ())
+let _ = Gl.render(~window, ~displayFunc=render, ())
+()
