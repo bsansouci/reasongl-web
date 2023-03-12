@@ -218,6 +218,15 @@ module Helpers = {
     | _ => None
     };
   };
+  let getTouches = (e, canvas) => {
+    let touches = convertToArray(getChangedTouches(e));
+      let rect = getBoundingClientRect(canvas);
+      Array.map(t => (
+        getTouchIdentifier(t), 
+        getClientX(t) - getLeft(rect), 
+        getClientY(t) - getTop(rect)), 
+        touches);
+  };
   [@bs.get] external getCanvasWidth: canvasT => int = "width";
   [@bs.get] external getCanvasHeight: canvasT => int = "height";
   [@bs.set] external setWidth: (canvasT, int) => unit = "width";
@@ -599,21 +608,28 @@ module Gl = {
         ~displayFunc: float => unit,
         (),
       ) => {
-    let singleTouchId = ref(None);
+    let touches = ref([]);
+    let addTouch = touchId => {
+      touches := List.exists(id => id == touchId, touches^) ? 
+        touches^ : 
+        [touchId, ...touches^];
+    };
+    let removeTouch = touchId => {
+      touches := List.filter(id => id == touchId, touches^);
+    };
     switch (mouseDown) {
     | None => ()
     | Some(cb) =>
-      Document.addEventListener(canvas, "touchstart", e =>
-        switch (Helpers.getTouch0(e, canvas)) {
-        | Some((touchId, x, y)) =>
-          switch (singleTouchId^) {
-          | None =>
-            singleTouchId := Some(touchId);
-            Helpers.preventDefault(e);
-            cb(~button=Events.LeftButton, ~state=Events.MouseDown, ~x, ~y);
-          | _ => singleTouchId := None
-          }
-        | None => ()
+      Document.addEventListener(canvas, "touchstart", e => {
+        let touches = Helpers.getTouches(e, canvas);
+        Array.length(touches) > 0 ? {
+          Helpers.preventDefault(e);
+          
+          Array.iter(t => {
+            let (touchId, x, y) = t;
+            addTouch(touchId);
+            cb(~button=Events.LeftButton, ~state=Events.MouseDown, ~x, ~y)}, touches);
+          } : ();
         }
       );
       Document.addEventListener(
@@ -638,30 +654,28 @@ module Gl = {
     switch (mouseUp) {
     | None => ()
     | Some(cb) =>
-      Document.addEventListener(canvas, "touchend", e =>
-        switch (getTouch0(e, canvas)) {
-        | Some((touchId, x, y)) =>
-          switch (singleTouchId^) {
-          | Some(id) when id == touchId =>
-            singleTouchId := None;
-            preventDefault(e);
-            cb(~button=Events.LeftButton, ~state=Events.MouseUp, ~x, ~y);
-          | _ => ()
-          }
-        | None => ()
+      Document.addEventListener(canvas, "touchend", e => {
+        let touches = getTouches(e, canvas);
+        Array.length(touches) > 0 ? {
+          preventDefault(e);
+          
+          Array.iter(t => {
+            let (touchId, x, y) = t;
+            removeTouch(touchId);
+            cb(~button=Events.LeftButton, ~state=Events.MouseUp, ~x, ~y)}, touches);
+          } : ();
         }
       );
-      Document.addEventListener(canvas, "touchcancel", e =>
-        switch (getTouch0(e, canvas)) {
-        | Some((touchId, x, y)) =>
-          switch (singleTouchId^) {
-          | Some(id) when id == touchId =>
-            singleTouchId := None;
-            preventDefault(e);
-            cb(~button=Events.LeftButton, ~state=Events.MouseUp, ~x, ~y);
-          | _ => ()
-          }
-        | None => ()
+      Document.addEventListener(canvas, "touchcancel", e => {
+        let touches = getTouches(e, canvas);
+        Array.length(touches) > 0 ? {
+          preventDefault(e);
+          
+          Array.iter(t => {
+            let (touchId, x, y) = t;
+            removeTouch(touchId);
+            cb(~button=Events.LeftButton, ~state=Events.MouseUp, ~x, ~y)}, touches);
+          } : ();
         }
       );
       Document.addEventListener(
@@ -686,17 +700,15 @@ module Gl = {
     switch (mouseMove) {
     | None => ()
     | Some(cb) =>
-      Document.addEventListener(canvas, "touchmove", e =>
-        switch (getTouch0(e, canvas)) {
-        | Some((touchId, x, y)) =>
-          switch (singleTouchId^) {
-          | Some(id) when id == touchId =>
-            preventDefault(e);
-            cb(~x, ~y);
-          | _ => ()
-          }
-        | None => ()
+      Document.addEventListener(canvas, "touchmove", e => {
+          preventDefault(e);
+          switch (getTouch0(e, canvas)) {
+            | Some((touchId, x, y)) => 
+              List.exists(id => id == touchId, touches^) ?
+              cb(~x, ~y): ();
+            | None => ();
         }
+      }
       );
       Document.addEventListener(
         canvas,
